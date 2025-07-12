@@ -15,6 +15,6 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.add.image(240, 320, "background")
 	}
 	update() {
-		
+
 	}
 }
