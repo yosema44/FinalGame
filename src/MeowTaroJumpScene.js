@@ -12,6 +12,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.salmon = undefined
 		this.solarfish = undefined
 		this.mudfish = undefined
+		this.platform = undefined
+		this.fishes = undefined
 	}
 
 	preload() {
@@ -20,13 +22,13 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.image("salmon", "images/Salmon.png")
 		this.load.image("solarfish", "images/Solarfish.png")
 		this.load.image("mudfish", "images/mudfish.png")
-		this.load.image("platform", "images/block_yellow.png") 
-		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48, })
-		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48, })
+		this.load.image("platform", "images/block_yellow.png")
+		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
+		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 	}
 	create() {
 		this.add.image(240, 320, "background")
-		this.add.image(240, 320, "platform").setScale(0.5)
+		this.add.image(140, 500, "platform").setScale(0.6)
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
@@ -34,56 +36,73 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.createAnimations()
 		this.player.anims.play("idle", true)
 		this.createPlatform()
-			
+		this.createFishes()
+		this.physics.add.collider(this.player, this.platform)
 	}
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
-		
+
 		let YLevel = 100
-		let lastX = 240;
+		let lastX = 240
 
 		for (let i = 0; i < 7; i++) {
-			let randomX;
-			let attempts = 0;
+			let randomX
+			let attempts = 0
 
-		do {
-			randomX = Math.floor(Math.random() * 420) + 30;
-			attempts++;
-		} while (attempts < 10 && Math.abs(randomX - lastX) < 80);
+			do {
+				randomX = Math.floor(Math.random() * 420) + 30
+				attempts++
+			} while (attempts < 10 && Math.abs(randomX - lastX) < 80)
 
-		if (Math.abs(randomX - lastX) < 80) {
-			if (lastX < 240) {
-				randomX = Math.min(450, lastX + 100 + Math.random() * 50);
-			} else {
-				randomX = Math.max(30, lastX - 100 - Math.random() * 50);
+			if (Math.abs(randomX - lastX) < 80) {
+				if (lastX < 240) {
+					randomX = Math.min(450, lastX + 100 + Math.random() * 50)
+				} else {
+					randomX = Math.max(30, lastX - 100 - Math.random() * 50)
+				}
 			}
-		}
 
-		this.platform.create(randomX, YLevel, "platform")
-		lastX = randomX;
-		const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 60;
-		YLevel = Math.min(nextYLevel, 480);
+			this.platform.create(randomX, YLevel, "platform").setScale(0.6, 0.6).refreshBody()
+			lastX = randomX
+			const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 60
+			YLevel = Math.min(nextYLevel, 480)
 		}
+	}
+
+	createFishes() {
+		this.fishes = this.physics.add.staticGroup()
+
+		const fishTypes = ["clownfish", "mudfish", "salmon", "solarfish"]
+
+		const platforms = this.platform.children.entries
+
+		platforms.forEach((platform) => {
+			const randomFishType = fishTypes[Math.floor(Math.random() * fishTypes.length)]
+
+			const fish = this.fishes.create(platform.x, platform.y - 30, randomFishType)
+
+			fish.setScale(0.4)
+
+			fish.refreshBody()
+		})
+
+		this.physics.add.overlap(this.player, this.fishes, this.collectFish, null, this)
+	}
+
+	collectFish(player, fish) {
+		fish.destroy()
 	}
 
 	update() {
 		const onGround = this.player.body.blocked.down || this.player.body.touching.down
 
-		if(onGround && this.isJumping) {
+		if (onGround && this.isJumping) {
 			this.isJumping = false
 			this.player.setScale(1)
 			this.player.setRotation(0)
 		}
 
 		if (this.cursors.left.isDown) {
-  		this.player.setVelocity(-70, 0);
-		}
-
-		if (this.cursors.right.isDown) {
- 		 this.player.setVelocityX(70);
-		}
-
-		if(this.cursors.left.isDown) {
 			this.player.setVelocityX(-160)
 			this.player.setFlipX(true)
 			if (this.isJumping) {
@@ -91,8 +110,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			} else {
 				this.player.anims.play("walk", true)
 			}
-		} 
-		else if (this.cursors.right.isDown){
+		} else if (this.cursors.right.isDown) {
 			this.player.setVelocityX(160)
 			this.player.setFlipX(false)
 			if (this.isJumping) {
@@ -100,8 +118,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			} else {
 				this.player.anims.play("walk", true)
 			}
-		}
-		else {
+		} else {
 			this.player.setVelocityX(0)
 			if (this.isJumping) {
 				this.player.anims.play("jump", true)
