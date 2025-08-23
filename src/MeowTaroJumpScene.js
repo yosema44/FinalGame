@@ -30,7 +30,6 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	}
 	create() {
 		this.add.image(240, 320, "background")
-		this.add.image(140, 560, "platform").setScale(0.6)
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
@@ -39,7 +38,6 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.player.anims.play("idle", true)
 		this.createPlatform()
 		this.createFishes()
-		this.collectFish()
 		this.physics.add.collider(this.player, this.platform)
 		this.scoreText = this.add.text(16, 16, "Score: 0", {
 			fontSize: "32px",
@@ -117,7 +115,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			if (this.isJumping) {
 				this.player.anims.play("jump", true)
 			} else {
-				this.player.anims.play("walk", true)
+				this.player.anims.play("idle", true)
 			}
 		} else if (this.cursors.right.isDown) {
 			this.player.setVelocityX(160)
@@ -132,7 +130,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			if (this.isJumping) {
 				this.player.anims.play("jump", true)
 			} else {
-				this.player.anims.play("walk", true)
+				this.player.anims.play("idle", true) // Should be "idle", not "walk"
 			}
 		}
 
