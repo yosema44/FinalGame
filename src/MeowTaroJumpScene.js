@@ -16,6 +16,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.fishes = undefined
 		this.scoreText = undefined
 		this.score = 0
+		this.startGame = undefined
 	}
 
 	preload() {
@@ -25,6 +26,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.image("solarfish", "images/Solarfish.png")
 		this.load.image("mudfish", "images/mudfish.png")
 		this.load.image("platform", "images/block_yellow.png")
+		this.load.image("button", "images/orangebutton.png")
 		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 	}
@@ -33,16 +35,23 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
-		this.cursors = this.input.keyboard.createCursorKeys()
+		this.cursors = this.input.keyboard.addKeys("A,D,space")
 		this.createAnimations()
 		this.player.anims.play("idle", true)
 		this.createPlatform()
 		this.createFishes()
+		this.setInteractive()
 		this.physics.add.collider(this.player, this.platform)
 		this.scoreText = this.add.text(16, 16, "Score: 0", {
 			fontSize: "32px",
 			color: "#030000ff",
 		})
+		// this.time.addEvent({
+		// 	delay: 3000,
+		// 	callback: this.startGame,
+		// 	callbackScope: this,
+		// 	loop: true,
+		// });
 	}
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
@@ -59,8 +68,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 				attempts++
 			} while (attempts < 10 && Math.abs(randomX - lastX) < 80)
 
-			if (Math.abs(randomX - lastX) < 80) {
-				if (lastX < 240) {
+			if (Math.abs(randomX - lastX) < 70) {
+				if (lastX < 200) {
 					randomX = Math.min(450, lastX + 100 + Math.random() * 50)
 				} else {
 					randomX = Math.max(30, lastX - 100 - Math.random() * 50)
@@ -69,7 +78,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 
 			this.platform.create(randomX, YLevel, "platform").setScale(0.6, 0.6).refreshBody()
 			lastX = randomX
-			const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 60
+			const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 50
 			YLevel = Math.min(nextYLevel, 480)
 		}
 	}
@@ -109,7 +118,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			this.player.setRotation(0)
 		}
 
-		if (this.cursors.left.isDown) {
+		if (this.cursors.A.isDown) {
 			this.player.setVelocityX(-160)
 			this.player.setFlipX(true)
 			if (this.isJumping) {
@@ -117,7 +126,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			} else {
 				this.player.anims.play("idle", true)
 			}
-		} else if (this.cursors.right.isDown) {
+		} else if (this.cursors.D.isDown) {
 			this.player.setVelocityX(160)
 			this.player.setFlipX(false)
 			if (this.isJumping) {
@@ -162,5 +171,18 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			frameRate: 16,
 			repeat: -1,
 		})
+	}
+	setInteractive() {
+		this.startButton = this.add.image(239, 500, "button").setInteractive()
+		this.startButton.once(
+			"pointerup",
+			() => {
+				this.scene.start("game-scene")
+			},
+			this
+		)
+	}
+	startGame() {
+		this.scene.start("meow-taro-jump-scene")
 	}
 }

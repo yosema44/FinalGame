@@ -1,6 +1,7 @@
 import Phaser from "phaser"
 
 import MeowTaroJumpScene from "./MeowTaroJumpScene.js"
+import StartScene from "./StartScene.js"
 
 const config = {
 	type: Phaser.AUTO,
@@ -13,7 +14,7 @@ const config = {
 			gravity: { y: 200 },
 		},
 	},
-	scene: [MeowTaroJumpScene],
+	scene: [StartScene, MeowTaroJumpScene],
 
 	scale: {
 		mode: Phaser.Scale.FIT,
