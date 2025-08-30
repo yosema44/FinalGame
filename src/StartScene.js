@@ -4,26 +4,23 @@ export default class StartScene extends Phaser.Scene {
 		super("start-scene")
 	}
 
-	init() {}
+	init() {
+	}
+
+	preload() {
+		this.load.image("background", "images/backgroundColorFall.png")
+		this.load.image("button", "images/orangebutton.png")
+	}
 
 	create() {
-		this.startButton = this.add.image(200, 500, "start-button").setInteractive()
+		this.add.image(400, 300, "background")
+		this.startButton = this.add.image(200, 500, "button").setInteractive()
 		this.startButton.once(
 			"pointerup",
 			() => {
-				this.scene.start("game-scene")
+				this.scene.start("meow-taro-jump-scene")
 			},
 			this
 		)
-		this.time.addEvent({
-			delay: 3000,
-			callback: this.startGame,
-			callbackScope: this,
-			loop: true,
-		})
-	}
-
-	startGame() {
-		this.scene.start("meaow-taro-jump-scene")
 	}
 }

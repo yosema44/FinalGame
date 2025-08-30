@@ -26,7 +26,6 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.image("solarfish", "images/Solarfish.png")
 		this.load.image("mudfish", "images/mudfish.png")
 		this.load.image("platform", "images/block_yellow.png")
-		this.load.image("button", "images/orangebutton.png")
 		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 	}
@@ -171,18 +170,5 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			frameRate: 16,
 			repeat: -1,
 		})
-	}
-	setInteractive() {
-		this.startButton = this.add.image(239, 500, "button").setInteractive()
-		this.startButton.once(
-			"pointerup",
-			() => {
-				this.scene.start("game-scene")
-			},
-			this
-		)
-	}
-	startGame() {
-		this.scene.start("meow-taro-jump-scene")
 	}
 }
