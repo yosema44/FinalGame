@@ -4,8 +4,7 @@ export default class StartScene extends Phaser.Scene {
 		super("start-scene")
 	}
 
-	init() {
-	}
+	init() {}
 
 	preload() {
 		this.load.image("background", "images/backgroundColorFall.png")
@@ -14,7 +13,7 @@ export default class StartScene extends Phaser.Scene {
 
 	create() {
 		this.add.image(400, 300, "background")
-		this.startButton = this.add.image(200, 500, "button").setInteractive()
+		this.startButton = this.add.image(239, 500, "button").setInteractive()
 		this.startButton.once(
 			"pointerup",
 			() => {

@@ -17,8 +17,9 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.scoreText = undefined
 		this.score = 0
 		this.startGame = undefined
+		this.lifelabel = undefined
+		this.life = 3
 	}
-
 	preload() {
 		this.load.image("background", "images/backgroundColorFall.png")
 		this.load.image("clownfish", "images/Clownfish.png")
@@ -39,11 +40,19 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.player.anims.play("idle", true)
 		this.createPlatform()
 		this.createFishes()
-		this.setInteractive()
 		this.physics.add.collider(this.player, this.platform)
 		this.scoreText = this.add.text(16, 16, "Score: 0", {
 			fontSize: "32px",
 			color: "#030000ff",
+		})
+		if (this.lifeLabel.getLife() == 0) {
+			this.scene.start("game-over-scene", {
+				score: this.scoreLabel.getScore(),
+			})
+		}
+		this.lifeLabel = this.add.text(10, 30, "Score", {
+			fontSize: "16px",
+			fill: "black",
 		})
 		// this.time.addEvent({
 		// 	delay: 3000,
@@ -148,6 +157,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			this.player.setScale(1.1)
 			this.player.anims.play("jump", true)
 		}
+
+		this.lifeLabel.setText("Life : " + this.life)
 	}
 	createAnimations() {
 		this.anims.create({
