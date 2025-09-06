@@ -16,8 +16,9 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.fishes = undefined
 		this.scoreText = undefined
 		this.score = 0
+		this.scoreLabel = undefined
 		this.startGame = undefined
-		this.lifelabel = undefined
+		this.lifeLabel = undefined
 		this.life = 3
 	}
 	preload() {
@@ -45,21 +46,12 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			fontSize: "32px",
 			color: "#030000ff",
 		})
-		if (this.lifeLabel.getLife() == 0) {
-			this.scene.start("game-over-scene", {
-				score: this.scoreLabel.getScore(),
-			})
-		}
-		this.lifeLabel = this.add.text(10, 30, "Score", {
+		
+		// Create lifeLabel properly
+		this.lifeLabel = this.add.text(10, 50, "Life: " + this.life, {
 			fontSize: "16px",
 			fill: "black",
 		})
-		// this.time.addEvent({
-		// 	delay: 3000,
-		// 	callback: this.startGame,
-		// 	callbackScope: this,
-		// 	loop: true,
-		// });
 	}
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
@@ -159,6 +151,13 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		}
 
 		this.lifeLabel.setText("Life : " + this.life)
+		
+		// Add game over check here instead
+		if (this.life <= 0) {
+			this.scene.start("over-scene", {
+				score: this.score
+			})
+		}
 	}
 	createAnimations() {
 		this.anims.create({
@@ -181,5 +180,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			frameRate: 16,
 			repeat: -1,
 		})
+	}
+	getLife() {
+		return this.life
 	}
 }
