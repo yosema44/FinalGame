@@ -20,6 +20,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.startGame = undefined
 		this.lifeLabel = undefined
 		this.life = 3
+		this.ground = undefined
 	}
 	preload() {
 		this.load.image("background", "images/backgroundColorFall.png")
@@ -33,6 +34,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	}
 	create() {
 		this.add.image(240, 320, "background")
+		this.ground = this.add.image(240, 520, "platform").setScale(0.6)
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
@@ -41,12 +43,13 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.player.anims.play("idle", true)
 		this.createPlatform()
 		this.createFishes()
+		this.physics.add.collider(this.player, this.ground)
 		this.physics.add.collider(this.player, this.platform)
 		this.scoreText = this.add.text(16, 16, "Score: 0", {
 			fontSize: "32px",
 			color: "#030000ff",
 		})
-		
+
 		// Create lifeLabel properly
 		this.lifeLabel = this.add.text(10, 50, "Life: " + this.life, {
 			fontSize: "16px",
@@ -151,11 +154,11 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		}
 
 		this.lifeLabel.setText("Life : " + this.life)
-		
+
 		// Add game over check here instead
-		if (this.life <= 0) {
+		if (this.life <= 0 || this.score == 70) {
 			this.scene.start("over-scene", {
-				score: this.score
+				score: this.score,
 			})
 		}
 	}
