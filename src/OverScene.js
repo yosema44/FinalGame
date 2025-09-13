@@ -5,7 +5,7 @@ export default class OverScene extends Phaser.Scene {
 	}
 
 	init(data) {
-		this.score = data.score
+		this.score = data && data.score ? data.score : 0	
 	}
 
 	preload() {
