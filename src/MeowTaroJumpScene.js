@@ -23,6 +23,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.ground = undefined
 	}
 	preload() {
+		this.load.image("ground", "images/ground.png")
 		this.load.image("background", "images/backgroundColorFall.png")
 		this.load.image("clownfish", "images/Clownfish.png")
 		this.load.image("salmon", "images/Salmon.png")
@@ -31,10 +32,11 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.image("platform", "images/block_yellow.png")
 		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
+		this.load.image("log", "images/ground.png")
 	}
 	create() {
 		this.add.image(240, 320, "background")
- 		this.ground = this.add.image(140, 560, "platform").setScale(0.6)
+		this.ground = this.physics.add.staticGroup()
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
@@ -45,12 +47,17 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.createFishes()
 		this.physics.add.collider(this.player, this.ground)
 		this.physics.add.collider(this.player, this.platform)
+
+		let cords = 30
+		for (let i = 0; i < 16; i++) {
+			this.ground.create(cords, 625, "log")
+			cords += 30
+		}
 		this.scoreText = this.add.text(16, 16, "Score: 0", {
 			fontSize: "32px",
 			color: "#030000ff",
 		})
 
-		// Create lifeLabel properly
 		this.lifeLabel = this.add.text(10, 50, "Life: " + this.life, {
 			fontSize: "16px",
 			fill: "black",
