@@ -21,6 +21,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.lifeLabel = undefined
 		this.life = 3
 		this.ground = undefined
+		this.lastY = 0;
+		this.wasOnPlatform = false;
 	}
 	preload() {
 		this.load.image("ground", "images/ground.png")
@@ -120,13 +122,30 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	}
 
 	update() {
-		const onGround = this.player.body.blocked.down || this.player.body.touching.down
+		const onGround = this.player.body.touching.down || this.player.body.blocked.down;
 
 		if (onGround && this.isJumping) {
 			this.isJumping = false
 			this.player.setScale(1)
 			this.player.setRotation(0)
 		}
+
+		
+        
+        // Save last Y position
+        const currentY = this.player.y;
+        
+        // Check if on platform (not the bottom ground)
+        const onPlatform = onGround && currentY < 550;
+        
+        if (onPlatform) {
+            this.wasOnPlatform = true;
+        }
+        
+        // Fall detection - if player was on a platform then falls beyond 600y
+        if (this.wasOnPlatform && !onGround && currentY > 550) {
+            this.loseLife();
+        }
 
 		if (this.cursors.A.isDown) {
 			this.player.setVelocityX(-160)
@@ -193,5 +212,38 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	}
 	getLife() {
 		return this.life
+	}
+
+	loseLife() {
+		// Reduce lives
+        this.life--;
+        
+        // Update display
+        this.lifeLabel.setText(`Lives: ${this.life}`);
+        
+        // Reset player position
+        this.player.setVelocity(0, 0);
+        this.player.y = 520;
+        
+        // Reset fall detection
+        this.wasOnPlatform = false;
+        
+        // Check for game over
+        if (this.life <= 0) {
+            this.scene.start('over-scene', { score: this.score });
+            return;
+        }
+        
+        // Flash the player to indicate damage
+        this.tweens.add({
+            targets: this.player,
+            alpha: 0.5,
+            duration: 100,
+            yoyo: true,
+            repeat: 5,
+            onComplete: () => {
+                this.player.alpha = 1;
+            }
+        });
 	}
 }
