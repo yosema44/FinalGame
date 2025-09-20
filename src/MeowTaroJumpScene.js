@@ -34,7 +34,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	}
 	create() {
 		this.add.image(240, 320, "background")
-		this.ground = this.add.image(240, 520, "platform").setScale(0.6)
+ 		this.ground = this.add.image(140, 560, "platform").setScale(0.6)
 		this.player = this.physics.add.sprite(240, 320, "idle")
 		this.player.setCollideWorldBounds(true)
 		this.player.setBounce(0.2)
