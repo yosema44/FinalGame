@@ -36,6 +36,7 @@ export default class Level2 extends Phaser.Scene {
         this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
         this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
         this.load.image("log", "images/ground.png")
+		this.load.audio("backgroundMusic", "images/pixel3.mp3")
         
         // REMOVE these lines - they cause the error!
         // this.physics.add.collider(this.player, this.ground)
@@ -43,6 +44,11 @@ export default class Level2 extends Phaser.Scene {
     }
 
     create() {
+		const music = this.sound.add("backgroundMusic", {
+			loop: true,
+			volume: 0.2,
+		})
+		music.play()
         this.add.image(240, 320, "background")
         this.ground = this.physics.add.staticGroup()
         this.player = this.physics.add.sprite(240, 320, "idle")
@@ -79,28 +85,78 @@ export default class Level2 extends Phaser.Scene {
     createPlatform() {
         this.platform = this.physics.add.staticGroup()
 
-        let YLevel = 100
+        // Start at a reachable height for level 2
         let lastX = 240
+        let lastY = 585 // Start at y=540 (ground is at 625, so 85 pixels above - reachable but requires a good jump)
 
+        // 11 platforms for level 2 - more challenging
         for (let i = 0; i < 7; i++) {
             let randomX
+            let randomY
+            let validPosition = false
             let attempts = 0
+            
             do {
-                randomX = Math.floor(Math.random() * 420) + 30
-                attempts++
-            } while (attempts < 10 && Math.abs(randomX - lastX) < 80)
-
-            if (Math.abs(randomX - lastX) < 70) {
-                if (lastX < 200) {
-                    randomX = Math.min(450, lastX + 100 + Math.random() * 50)
+                // Horizontal spacing: 90-150 pixels (more challenging than level 1)
+                const minHorizontalDistance = 90
+                const maxHorizontalDistance = 150
+                
+                // More varied movement pattern
+                let direction
+                if (i % 3 === 0) {
+                    direction = 1 // Go right
+                } else if (i % 3 === 1) {
+                    direction = -1 // Go left
                 } else {
-                    randomX = Math.max(30, lastX - 100 - Math.random() * 50)
+                    direction = Math.random() > 0.5 ? 1 : -1 // Random
                 }
+                
+                const horizontalOffset = minHorizontalDistance + Math.random() * (maxHorizontalDistance - minHorizontalDistance)
+                randomX = lastX + direction * horizontalOffset
+                
+                // Keep within safe bounds (60-420)
+                randomX = Math.max(60, Math.min(420, randomX))
+                
+                // Vertical spacing: 80-100 pixels going UPWARD (increased for fish clearance)
+                const verticalOffset = 80 + Math.floor(Math.random() * 20)
+                randomY = lastY - verticalOffset // Subtract to go UP
+                
+                // Don't let platforms go too high (keep below y=120)
+                randomY = Math.max(randomY, 120)
+                
+                // Check for overlaps with existing platforms
+                validPosition = true
+                const existingPlatforms = this.platform.children.entries
+                
+                for (let j = 0; j < existingPlatforms.length; j++) {
+                    const existing = existingPlatforms[j]
+                    const horizontalDistance = Math.abs(existing.x - randomX)
+                    const verticalDistance = Math.abs(existing.y - randomY)
+                    
+                    // Minimum 85px horizontal OR 70px vertical separation for fish clearance
+                    if (horizontalDistance < 85 && verticalDistance < 70) {
+                        validPosition = false
+                        break
+                    }
+                }
+                
+                attempts++
+            } while (!validPosition && attempts < 20)
+            
+            // If we couldn't find a valid position, force one with proper spacing
+            if (!validPosition) {
+                randomX = lastX < 240 ? lastX + 130 : lastX - 130
+                randomX = Math.max(60, Math.min(420, randomX))
+                randomY = lastY - 75 // Guaranteed 75 pixel vertical gap upward
+                randomY = Math.max(randomY, 120) // Don't go above y=120
             }
-            this.platform.create(randomX, YLevel, "platform").setScale(0.6, 0.6).refreshBody()
+            
+            // Variable platform size for level 2
+            const scale = 0.55 + Math.random() * 0.1 // Between 0.55 and 0.65
+            this.platform.create(randomX, randomY, "platform").setScale(scale, scale).refreshBody()
+            
             lastX = randomX
-            const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 50
-            YLevel = Math.min(nextYLevel, 480)
+            lastY = randomY
         }
     }
 

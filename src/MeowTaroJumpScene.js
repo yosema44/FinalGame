@@ -35,8 +35,14 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.image("log", "images/ground.png")
+		this.load.audio("backgroundMusic", "images/pixel3.mp3")
 	}
 	create() {
+		const music = this.sound.add("backgroundMusic", {
+			loop: true,
+			volume: 0.2,
+		})
+		music.play()
 		this.add.image(240, 320, "background")
 		this.ground = this.physics.add.staticGroup()
 		this.player = this.physics.add.sprite(240, 320, "idle")
@@ -68,28 +74,69 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
 
-		let YLevel = 100
+		// Start at a reachable height - close enough to jump from ground
 		let lastX = 240
+		let lastY = 585 // Start at y=550 (ground is at 625, so only 75 pixels above - easily reachable)
 
+		// 9 platforms for level 1 - balanced challenge
 		for (let i = 0; i < 7; i++) {
 			let randomX
+			let randomY
+			let validPosition = false
 			let attempts = 0
-			do {
-				randomX = Math.floor(Math.random() * 420) + 30
-				attempts++
-			} while (attempts < 10 && Math.abs(randomX - lastX) < 80)
 
-			if (Math.abs(randomX - lastX) < 70) {
-				if (lastX < 200) {
-					randomX = Math.min(450, lastX + 100 + Math.random() * 50)
-				} else {
-					randomX = Math.max(30, lastX - 100 - Math.random() * 50)
+			do {
+				// Horizontal spacing: 80-140 pixels (challenging but reachable)
+				const minHorizontalDistance = 80
+				const maxHorizontalDistance = 140
+
+				// Alternate direction for more variety
+				const direction = Math.random() > 0.5 ? 1 : -1
+				const horizontalOffset = minHorizontalDistance + Math.random() * (maxHorizontalDistance - minHorizontalDistance)
+
+				randomX = lastX + direction * horizontalOffset
+
+				// Keep within safe bounds (60-420)
+				randomX = Math.max(60, Math.min(420, randomX))
+
+				// Vertical spacing: 60-80 pixels going UPWARD (increased gap for fish access)
+				const verticalOffset = 80 + Math.floor(Math.random() * 20)
+				randomY = lastY - verticalOffset // Subtract to go UP
+
+				// Don't let platforms go too high (keep below y=150)
+				randomY = Math.max(randomY, 50)
+
+				// Check for overlaps with existing platforms
+				validPosition = true
+				const existingPlatforms = this.platform.children.entries
+
+				for (let j = 0; j < existingPlatforms.length; j++) {
+					const existing = existingPlatforms[j]
+					const horizontalDistance = Math.abs(existing.x - randomX)
+					const verticalDistance = Math.abs(existing.y - randomY)
+
+					// Minimum 80px horizontal OR 65px vertical separation for fish clearance
+					if (horizontalDistance < 80 && verticalDistance < 65) {
+						validPosition = false
+						break
+					}
 				}
+
+				attempts++
+			} while (!validPosition && attempts < 20)
+
+			// If we couldn't find a valid position, force one with proper spacing
+			if (!validPosition) {
+				randomX = lastX < 240 ? lastX + 120 : lastX - 120
+				randomX = Math.max(60, Math.min(420, randomX))
+				randomY = lastY - 70 // Guaranteed 70 pixel vertical gap upward
+				randomY = Math.max(randomY, 50) // Don't go above y=150
 			}
-			this.platform.create(randomX, YLevel, "platform").setScale(0.6, 0.6).refreshBody()
+
+			this.platform.create(randomX, randomY, "platform").setScale(0.6, 0.6).refreshBody()
+
 			lastX = randomX
-			const nextYLevel = YLevel + Math.floor(Math.random() * 20) + 50
-			YLevel = Math.min(nextYLevel, 480)
+			lastY = randomY
 		}
 	}
 
