@@ -1,7 +1,7 @@
 import Phaser from "phaser"
-export default class MeowTaroJumpScene extends Phaser.Scene {
+export default class Level2 extends Phaser.Scene {
 	constructor() {
-		super("meow-taro-jump-scene")
+		super("level-2")
 	}
 
 	init() {
@@ -15,15 +15,14 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.platform = undefined
 		this.fishes = undefined
 		this.scoreText = undefined
-		this.score = 0
+		this.score = 70
 		this.scoreLabel = undefined
 		this.startGame = undefined
 		this.lifeLabel = undefined
 		this.life = 3
 		this.ground = undefined
-		this.lastY = 0
-		this.wasOnPlatform = false
 	}
+
 	preload() {
 		this.load.image("ground", "images/ground.png")
 		this.load.image("background", "images/backgroundColorFall.png")
@@ -35,7 +34,10 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.image("log", "images/ground.png")
+		this.physics.add.collider(this.player, this.ground)
+		this.physics.add.collider(this.player, this.platform)
 	}
+
 	create() {
 		this.add.image(240, 320, "background")
 		this.ground = this.physics.add.staticGroup()
@@ -65,6 +67,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			fill: "black",
 		})
 	}
+
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
 
@@ -93,6 +96,12 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		}
 	}
 
+	collectFish(player, fish) {
+		fish.destroy()
+		this.score += 10
+		this.scoreText.setText("Score : " + this.score)
+	}
+
 	createFishes() {
 		this.fishes = this.physics.add.staticGroup()
 
@@ -111,12 +120,6 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		})
 
 		this.physics.add.overlap(this.player, this.fishes, this.collectFish, null, this)
-	}
-
-	collectFish(player, fish) {
-		fish.destroy()
-		this.score += 10
-		this.scoreText.setText("Score : " + this.score)
 	}
 
 	update() {
@@ -178,12 +181,13 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.lifeLabel.setText("Life : " + this.life)
 
 		// Add game over check here instead
-		if (this.life <= 0 || this.score == 70) {
-			this.scene.start("level-2", {
+		if (this.life <= 0 || this.score == 140) {
+			this.scene.start("over-scene", {
 				score: this.score,
 			})
 		}
 	}
+
 	createAnimations() {
 		this.anims.create({
 			key: "idle",
@@ -206,11 +210,11 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			repeat: -1,
 		})
 	}
-	getLife() {
+	getlife() {
 		return this.life
 	}
 
-	loseLife() {
+	loselife() {
 		// Reduce lives
 		this.life--
 
