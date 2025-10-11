@@ -14,10 +14,10 @@ const config = {
 		default: "arcade",
 		arcade: {
 			gravity: { y: 200 },
+			debug: true,
 		},
 	},
 	scene: [StartScene, MeowTaroJumpScene, Level2, OverScene],
-
 	scale: {
 		mode: Phaser.Scale.FIT,
 		autoCenter: Phaser.Scale.CENTER_BOTH,

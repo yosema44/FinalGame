@@ -36,6 +36,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
 		this.load.image("log", "images/ground.png")
 		this.load.audio("backgroundMusic", "images/pixel3.mp3")
+		this.load.audio("pickupSound", "images/coin.mp3")
 	}
 	create() {
 		const music = this.sound.add("backgroundMusic", {
@@ -70,6 +71,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 			fontSize: "16px",
 			fill: "black",
 		})
+		this.player.setSize(30, 35) // Make hitbox smaller than the 48x48 sprite
+		this.player.setOffset(9, 13) // Adjust offset to center the hitbox
 	}
 	createPlatform() {
 		this.platform = this.physics.add.staticGroup()
@@ -100,11 +103,11 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 				randomX = Math.max(60, Math.min(420, randomX))
 
 				// Vertical spacing: 60-80 pixels going UPWARD (increased gap for fish access)
-				const verticalOffset = 80 + Math.floor(Math.random() * 20)
+				const verticalOffset = 70 + Math.floor(Math.random() * 20)
 				randomY = lastY - verticalOffset // Subtract to go UP
 
 				// Don't let platforms go too high (keep below y=150)
-				randomY = Math.max(randomY, 50)
+				randomY = Math.max(randomY, 80)
 
 				// Check for overlaps with existing platforms
 				validPosition = true
@@ -116,7 +119,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 					const verticalDistance = Math.abs(existing.y - randomY)
 
 					// Minimum 80px horizontal OR 65px vertical separation for fish clearance
-					if (horizontalDistance < 80 && verticalDistance < 65) {
+					if (horizontalDistance < 80 && verticalDistance < 75) {
 						validPosition = false
 						break
 					}
@@ -162,6 +165,8 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 
 	collectFish(player, fish) {
 		fish.destroy()
+		const pickupSound = this.sound.add("pickupSound", { volume: 0.5 })
+		pickupSound.play()
 		this.score += 10
 		this.scoreText.setText("Score : " + this.score)
 	}
@@ -228,6 +233,7 @@ export default class MeowTaroJumpScene extends Phaser.Scene {
 		if (this.life <= 0 || this.score == 70) {
 			this.scene.start("level-2", {
 				score: this.score,
+				life: this.life, // Pass remaining life to level 2
 			})
 		}
 	}

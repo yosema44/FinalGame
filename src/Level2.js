@@ -1,313 +1,364 @@
 import Phaser from "phaser"
 export default class Level2 extends Phaser.Scene {
-    constructor() {
-        super("level-2")
-    }
+	constructor() {
+		super("level-2")
+	}
 
-    init(data) {
-        this.player = null
-        this.cursors = null
-        this.isJumping = false
-        this.clownfish = undefined
-        this.salmon = undefined
-        this.solarfish = undefined
-        this.mudfish = undefined
-        this.platform = undefined
-        this.fishes = undefined
-        this.scoreText = undefined
-        // Get score from previous scene, or start at 70
-        this.score = data && data.score ? data.score : 70
-        this.scoreLabel = undefined
-        this.startGame = undefined
-        this.lifeLabel = undefined
-        this.life = 3
-        this.ground = undefined
-        this.wasOnPlatform = false
-    }
+	init(data) {
+		this.player = null
+		this.cursors = null
+		this.isJumping = false
+		this.clownfish = undefined
+		this.salmon = undefined
+		this.solarfish = undefined
+		this.mudfish = undefined
+		this.platform = undefined
+		this.fishes = undefined
+		this.scoreText = undefined
+		// Get score from previous scene, or start at 70
+		this.score = data && data.score ? data.score : 70
+		this.scoreLabel = undefined
+		this.startGame = undefined
+		this.lifeLabel = undefined
+		// Get life from previous scene, or start at 3
+		this.life = data && data.life ? data.life : 3
+		this.ground = undefined
+		this.wasOnPlatform = false
+		this.platformVelocities = [] // Store velocities for each platform
+		this.platformDirections = [] // Store movement directions
+	}
 
-    preload() {
-        this.load.image("ground", "images/ground.png")
-        this.load.image("background", "images/backgroundColorFall.png")
-        this.load.image("clownfish", "images/Clownfish.png")
-        this.load.image("salmon", "images/Salmon.png")
-        this.load.image("solarfish", "images/Solarfish.png")
-        this.load.image("mudfish", "images/mudfish.png")
-        this.load.image("platform", "images/block_yellow.png")
-        this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
-        this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
-        this.load.image("log", "images/ground.png")
+	preload() {
+		this.load.image("ground", "images/ground.png")
+		this.load.image("background", "images/backgroundColorFall.png")
+		this.load.image("clownfish", "images/Clownfish.png")
+		this.load.image("salmon", "images/Salmon.png")
+		this.load.image("solarfish", "images/Solarfish.png")
+		this.load.image("mudfish", "images/mudfish.png")
+		this.load.image("platform", "images/block_yellow.png")
+		this.load.spritesheet("idle", "images/Idle.png", { frameWidth: 48, frameHeight: 48 })
+		this.load.spritesheet("walk", "images/Walk.png", { frameWidth: 48, frameHeight: 48 })
+		this.load.image("log", "images/ground.png")
 		this.load.audio("backgroundMusic", "images/pixel3.mp3")
-        
-        // REMOVE these lines - they cause the error!
-        // this.physics.add.collider(this.player, this.ground)
-        // this.physics.add.collider(this.player, this.platform)
-    }
 
-    create() {
+		// REMOVE these lines - they cause the error!
+		// this.physics.add.collider(this.player, this.ground)
+		// this.physics.add.collider(this.player, this.platform)
+	}
+
+	create() {
 		const music = this.sound.add("backgroundMusic", {
 			loop: true,
 			volume: 0.2,
 		})
 		music.play()
-        this.add.image(240, 320, "background")
-        this.ground = this.physics.add.staticGroup()
-        this.player = this.physics.add.sprite(240, 320, "idle")
-        this.player.setCollideWorldBounds(true)
-        this.player.setBounce(0.2)
-        this.cursors = this.input.keyboard.addKeys("A,D,space")
-        this.createAnimations()
-        this.player.anims.play("idle", true)
-        this.createPlatform()
-        this.createFishes()
-        
-        // Add colliders here in create() - AFTER objects are created
-        this.physics.add.collider(this.player, this.ground)
-        this.physics.add.collider(this.player, this.platform)
+		this.add.image(240, 320, "background")
+		this.ground = this.physics.add.staticGroup()
+		this.player = this.physics.add.sprite(240, 320, "idle")
+		this.player.setCollideWorldBounds(true)
+		this.player.setBounce(0.2)
+		this.player.setSize(30, 35) // Make hitbox smaller than the 48x48 sprite
+		this.player.setOffset(9, 13) // Adjust offset to center the hitbox
+		this.cursors = this.input.keyboard.addKeys("A,D,space")
+		this.createAnimations()
+		this.player.anims.play("idle", true)
+		this.createPlatform()
+		this.createFishes()
 
-        let cords = 30
-        for (let i = 0; i < 16; i++) {
-            this.ground.create(cords, 625, "log")
-            cords += 30
-        }
-        
-        // Display score from previous level
-        this.scoreText = this.add.text(16, 16, "Score: " + this.score, {
-            fontSize: "32px",
-            color: "#030000ff",
-        })
+		// Add colliders here in create() - AFTER objects are created
+		this.physics.add.collider(this.player, this.ground)
+		this.physics.add.collider(this.player, this.platform)
 
-        this.lifeLabel = this.add.text(10, 50, "Life: " + this.life, {
-            fontSize: "16px",
-            fill: "black",
-        })
-    }
+		let cords = 30
+		for (let i = 0; i < 16; i++) {
+			this.ground.create(cords, 625, "log")
+			cords += 30
+		}
 
-    createPlatform() {
-        this.platform = this.physics.add.staticGroup()
+		// Display score from previous level
+		this.scoreText = this.add.text(16, 16, "Score: " + this.score, {
+			fontSize: "32px",
+			color: "#030000ff",
+		})
 
-        // Start at a reachable height for level 2
-        let lastX = 240
-        let lastY = 585 // Start at y=540 (ground is at 625, so 85 pixels above - reachable but requires a good jump)
+		this.lifeLabel = this.add.text(10, 50, "Life: " + this.life, {
+			fontSize: "16px",
+			fill: "black",
+		})
+	}
 
-        // 11 platforms for level 2 - more challenging
-        for (let i = 0; i < 7; i++) {
-            let randomX
-            let randomY
-            let validPosition = false
-            let attempts = 0
-            
-            do {
-                // Horizontal spacing: 90-150 pixels (more challenging than level 1)
-                const minHorizontalDistance = 90
-                const maxHorizontalDistance = 150
-                
-                // More varied movement pattern
-                let direction
-                if (i % 3 === 0) {
-                    direction = 1 // Go right
-                } else if (i % 3 === 1) {
-                    direction = -1 // Go left
-                } else {
-                    direction = Math.random() > 0.5 ? 1 : -1 // Random
-                }
-                
-                const horizontalOffset = minHorizontalDistance + Math.random() * (maxHorizontalDistance - minHorizontalDistance)
-                randomX = lastX + direction * horizontalOffset
-                
-                // Keep within safe bounds (60-420)
-                randomX = Math.max(60, Math.min(420, randomX))
-                
-                // Vertical spacing: 80-100 pixels going UPWARD (increased for fish clearance)
-                const verticalOffset = 80 + Math.floor(Math.random() * 20)
-                randomY = lastY - verticalOffset // Subtract to go UP
-                
-                // Don't let platforms go too high (keep below y=120)
-                randomY = Math.max(randomY, 120)
-                
-                // Check for overlaps with existing platforms
-                validPosition = true
-                const existingPlatforms = this.platform.children.entries
-                
-                for (let j = 0; j < existingPlatforms.length; j++) {
-                    const existing = existingPlatforms[j]
-                    const horizontalDistance = Math.abs(existing.x - randomX)
-                    const verticalDistance = Math.abs(existing.y - randomY)
-                    
-                    // Minimum 85px horizontal OR 70px vertical separation for fish clearance
-                    if (horizontalDistance < 85 && verticalDistance < 70) {
-                        validPosition = false
-                        break
-                    }
-                }
-                
-                attempts++
-            } while (!validPosition && attempts < 20)
-            
-            // If we couldn't find a valid position, force one with proper spacing
-            if (!validPosition) {
-                randomX = lastX < 240 ? lastX + 130 : lastX - 130
-                randomX = Math.max(60, Math.min(420, randomX))
-                randomY = lastY - 75 // Guaranteed 75 pixel vertical gap upward
-                randomY = Math.max(randomY, 120) // Don't go above y=120
-            }
-            
-            // Variable platform size for level 2
-            const scale = 0.55 + Math.random() * 0.1 // Between 0.55 and 0.65
-            this.platform.create(randomX, randomY, "platform").setScale(scale, scale).refreshBody()
-            
-            lastX = randomX
-            lastY = randomY
-        }
-    }
+	createPlatform() {
+		// Change from staticGroup to group for moving platforms
+		this.platform = this.physics.add.group()
 
-    collectFish(player, fish) {
-        fish.destroy()
-        this.score += 10
-        this.scoreText.setText("Score : " + this.score)
-    }
+		let lastX = 240
+		let lastY = 585 // Start at y=585 (ground is at 625, so 40 pixels above - reachable with a smaller jump)
 
-    createFishes() {
-        this.fishes = this.physics.add.staticGroup()
+		// 7 platforms for level 2 - more challenging
+		for (let i = 0; i < 7; i++) {
+			let randomX
+			let randomY
+			let validPosition = false
+			let attempts = 0
 
-        const fishTypes = ["clownfish", "mudfish", "salmon", "solarfish"]
+			do {
+				// Horizontal spacing: 90-150 pixels (more challenging than level 1)
+				const minHorizontalDistance = 90
+				const maxHorizontalDistance = 150
 
-        const platforms = this.platform.children.entries
+				// More varied movement pattern
+				let direction
+				if (i % 3 === 0) {
+					direction = 1 // Go right
+				} else if (i % 3 === 1) {
+					direction = -1 // Go left
+				} else {
+					direction = Math.random() > 0.5 ? 1 : -1 // Random
+				}
 
-        platforms.forEach((platform) => {
-            const randomFishType = fishTypes[Math.floor(Math.random() * fishTypes.length)]
+				const horizontalOffset = minHorizontalDistance + Math.random() * (maxHorizontalDistance - minHorizontalDistance)
+				randomX = lastX + direction * horizontalOffset
 
-            const fish = this.fishes.create(platform.x, platform.y - 30, randomFishType)
+				// Keep within safe bounds (60-420)
+				randomX = Math.max(60, Math.min(420, randomX))
 
-            fish.setScale(0.4)
+				// Vertical spacing: 80-100 pixels going UPWARD (increased for fish clearance)
+				const verticalOffset = 70 + Math.floor(Math.random() * 20)
+				randomY = lastY - verticalOffset // Subtract to go UP
 
-            fish.refreshBody()
-        })
+				// Don't let platforms go too high (keep below y=120)
+				randomY = Math.max(randomY, 80)
 
-        this.physics.add.overlap(this.player, this.fishes, this.collectFish, null, this)
-    }
+				// Check for overlaps with existing platforms
+				validPosition = true
+				const existingPlatforms = this.platform.children.entries
 
-    update() {
-        const onGround = this.player.body.touching.down || this.player.body.blocked.down
+				for (let j = 0; j < existingPlatforms.length; j++) {
+					const existing = existingPlatforms[j]
+					const horizontalDistance = Math.abs(existing.x - randomX)
+					const verticalDistance = Math.abs(existing.y - randomY)
 
-        if (onGround && this.isJumping) {
-            this.isJumping = false
-            this.player.setScale(1)
-            this.player.setRotation(0)
-        }
+					// Minimum 85px horizontal OR 70px vertical separation for fish clearance
+					if (horizontalDistance < 85 && verticalDistance < 75) {
+						validPosition = false
+						break
+					}
+				}
 
-        // Save last Y position
-        const currentY = this.player.y
+				attempts++
+			} while (!validPosition && attempts < 20)
 
-        // Check if on platform (not the bottom ground)
-        const onPlatform = onGround && currentY < 550
+			// If we couldn't find a valid position, force one with proper spacing
+			if (!validPosition) {
+				randomX = lastX < 240 ? lastX + 130 : lastX - 130
+				randomX = Math.max(60, Math.min(420, randomX))
+				randomY = lastY - 75 // Guaranteed 75 pixel vertical gap upward
+				randomY = Math.max(randomY, 120) // Don't go above y=120
+			}
 
-        if (onPlatform) {
-            this.wasOnPlatform = true
-        }
+			// Variable platform size for level 2
+			const scale = 0.55 + Math.random() * 0.1 // Between 0.55 and 0.65
+			// Create platform sprite directly in the dynamic group
+			const platformSprite = this.platform.create(randomX, randomY, "platform")
+			platformSprite.setScale(scale, scale)
 
-        // Fall detection - if player was on a platform then falls beyond 600y
-        if (this.wasOnPlatform && !onGround && currentY > 550) {
-            this.loseLife()
-        }
+			// Configure the platform physics
+			platformSprite.setImmovable(true)
+			platformSprite.body.allowGravity = false
 
-        if (this.cursors.A.isDown) {
-            this.player.setVelocityX(-160)
-            this.player.setFlipX(true)
-            if (this.isJumping) {
-                this.player.anims.play("jump", true)
-            } else {
-                this.player.anims.play("idle", true)
-            }
-        } else if (this.cursors.D.isDown) {
-            this.player.setVelocityX(160)
-            this.player.setFlipX(false)
-            if (this.isJumping) {
-                this.player.anims.play("jump", true)
-            } else {
-                this.player.anims.play("walk", true)
-            }
-        } else {
-            this.player.setVelocityX(0)
-            if (this.isJumping) {
-                this.player.anims.play("jump", true)
-            } else {
-                this.player.anims.play("idle", true) // Should be "idle", not "walk"
-            }
-        }
+			// Set random movement speed and direction
+			const speed = 50 + Math.random() * 50 // Speed between 50-100
+			const direction = Math.random() > 0.5 ? 1 : -1
 
-        if (this.cursors.space.isDown && onGround && !this.isJumping) {
-            this.player.setVelocityY(-225)
-            this.isJumping = true
-            this.player.setScale(1.1)
-            this.player.anims.play("jump", true)
-        }
+			// Store the movement properties
+			this.platformVelocities.push(speed)
+			this.platformDirections.push(direction)
 
-        this.lifeLabel.setText("Life : " + this.life)
+			// Set initial velocity
+			platformSprite.setVelocityX(speed * direction)
 
-        // Add game over check here instead
-        if (this.life <= 0 || this.score == 140) {
-            this.scene.start("over-scene", {
-                score: this.score,
-            })
-        }
-    }
+			lastX = randomX
+			lastY = randomY
+		}
+	}
 
-    createAnimations() {
-        this.anims.create({
-            key: "idle",
-            frames: this.anims.generateFrameNumbers("idle", { start: 0, end: 3 }),
-            frameRate: 8,
-            repeat: -1,
-        })
+	collectFish(player, fish) {
+		// Only collect the specific fish that was touched
+		fish.destroy()
+		this.score += 10
+		this.scoreText.setText("Score : " + this.score)
+	}
 
-        this.anims.create({
-            key: "walk",
-            frames: this.anims.generateFrameNumbers("walk", { start: 0, end: 7 }),
-            frameRate: 12,
-            repeat: -1,
-        })
+	createFishes() {
+		// Change to dynamic group since we need individual physics bodies
+		this.fishes = this.physics.add.group()
 
-        this.anims.create({
-            key: "jump",
-            frames: this.anims.generateFrameNumbers("idle", { start: 0, end: 3 }),
-            frameRate: 16,
-            repeat: -1,
-        })
-    }
-    getlife() {
-        return this.life
-    }
+		const fishTypes = ["clownfish", "mudfish", "salmon", "solarfish"]
 
-    loselife() {
-        // Reduce lives
-        this.life--
+		this.platform.getChildren().forEach((platform) => {
+			const randomFishType = fishTypes[Math.floor(Math.random() * fishTypes.length)]
+			const fish = this.fishes.create(platform.x, platform.y - 30, randomFishType)
 
-        // Update display
-        this.lifeLabel.setText(`Lives: ${this.life}`)
+			// Configure each fish individually
+			fish.setScale(0.4)
+			fish.body.allowGravity = false
+			fish.body.immovable = true
 
-        // Reset player position
-        this.player.setVelocity(0, 0)
-        this.player.y = 520
+			// Store reference to parent platform for movement
+			fish.platformIndex = this.platform.getChildren().indexOf(platform)
+		})
 
-        // Reset fall detection
-        this.wasOnPlatform = false
+		this.physics.add.overlap(this.player, this.fishes, this.collectFish, null, this)
+	}
 
-        // Check for game over
-        if (this.life <= 0) {
-            this.scene.start("over-scene", { score: this.score })
-            return
-        }
+	handlePlatformMovement() {
+		this.platform.getChildren().forEach((platform, index) => {
+			const speed = this.platformVelocities[index]
 
-        // Flash the player to indicate damage
-        this.tweens.add({
-            targets: this.player,
-            alpha: 0.5,
-            duration: 100,
-            yoyo: true,
-            repeat: 5,
-            onComplete: () => {
-                this.player.alpha = 1
-            },
-        })
-    }
+			// Reverse direction at screen bounds
+			if (platform.x <= 60) {
+				this.platformDirections[index] = 1
+				platform.setVelocityX(speed)
+			} else if (platform.x >= 420) {
+				this.platformDirections[index] = -1
+				platform.setVelocityX(-speed)
+			}
+
+			// Move attached fish with platform
+			this.fishes.getChildren().forEach((fish) => {
+				if (fish.platformIndex === index) {
+					fish.x = platform.x
+					fish.y = platform.y - 30
+				}
+			})
+		})
+	}
+
+	update() {
+		this.handlePlatformMovement()
+
+		const onGround = this.player.body.touching.down || this.player.body.blocked.down
+
+		if (onGround && this.isJumping) {
+			this.isJumping = false
+			this.player.setScale(1)
+			this.player.setRotation(0)
+		}
+
+		// Save last Y position
+		const currentY = this.player.y
+
+		// Check if on platform (not the bottom ground)
+		const onPlatform = onGround && currentY < 550
+
+		if (onPlatform) {
+			this.wasOnPlatform = true
+		}
+
+		// Fall detection - if player was on a platform then falls beyond 600y
+		if (this.wasOnPlatform && !onGround && currentY > 550) {
+			this.loseLife() // Capital L in loseLife
+		}
+
+		if (this.cursors.A.isDown) {
+			this.player.setVelocityX(-160)
+			this.player.setFlipX(true)
+			if (this.isJumping) {
+				this.player.anims.play("jump", true)
+			} else {
+				this.player.anims.play("idle", true)
+			}
+		} else if (this.cursors.D.isDown) {
+			this.player.setVelocityX(160)
+			this.player.setFlipX(false)
+			if (this.isJumping) {
+				this.player.anims.play("jump", true)
+			} else {
+				this.player.anims.play("walk", true)
+			}
+		} else {
+			this.player.setVelocityX(0)
+			if (this.isJumping) {
+				this.player.anims.play("jump", true)
+			} else {
+				this.player.anims.play("idle", true) // Should be "idle", not "walk"
+			}
+		}
+
+		if (this.cursors.space.isDown && onGround && !this.isJumping) {
+			this.player.setVelocityY(-225)
+			this.isJumping = true
+			this.player.setScale(1.1)
+			this.player.anims.play("jump", true)
+		}
+
+		this.lifeLabel.setText("Life : " + this.life)
+
+		// Add game over check here instead
+		if (this.life <= 0 || this.score == 140) {
+			this.scene.start("over-scene", {
+				score: this.score,
+			})
+		}
+	}
+
+	createAnimations() {
+		this.anims.create({
+			key: "idle",
+			frames: this.anims.generateFrameNumbers("idle", { start: 0, end: 3 }),
+			frameRate: 8,
+			repeat: -1,
+		})
+
+		this.anims.create({
+			key: "walk",
+			frames: this.anims.generateFrameNumbers("walk", { start: 0, end: 7 }),
+			frameRate: 12,
+			repeat: -1,
+		})
+
+		this.anims.create({
+			key: "jump",
+			frames: this.anims.generateFrameNumbers("idle", { start: 0, end: 3 }),
+			frameRate: 16,
+			repeat: -1,
+		})
+	}
+	// Fix the loseLife function name (it was lowercase before)
+	loseLife() {
+		// Reduce lives
+		this.life--
+
+		// Update display
+		this.lifeLabel.setText(`Lives: ${this.life}`)
+
+		// Reset player position
+		this.player.setVelocity(0, 0)
+		this.player.y = 520
+
+		// Reset fall detection
+		this.wasOnPlatform = false
+
+		// Check for game over
+		if (this.life <= 0) {
+			this.scene.start("over-scene", { score: this.score })
+			return
+		}
+
+		// Flash the player to indicate damage
+		this.tweens.add({
+			targets: this.player,
+			alpha: 0.5,
+			duration: 100,
+			yoyo: true,
+			repeat: 5,
+			onComplete: () => {
+				this.player.alpha = 1
+			},
+		})
+	}
+	// Update getLife function name to match (it was lowercase before)
+	getLife() {
+		return this.life
+	}
 }
